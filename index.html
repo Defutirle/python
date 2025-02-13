@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Распознавание</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e8f5e9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 20px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            animation: fadeIn 1s ease-in-out;
+            transition: background-color 0.3s ease;
+        }
+
+        h1 {
+            color: #2e7d32;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        form {
+            margin-bottom: 20px;
+            animation: fadeInUp 0.8s ease-in-out;
+        }
+
+        input[type="file"], select, button {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #81c784;
+            background: white;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        button {
+            background: #388e3c;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background: #2e7d32;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #81c784;
+            padding: 10px 0 0 0;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 10px;
+            resize: none;
+            background: #f1f8e9;
+            transition: all 0.3s;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-top: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        h2 {
+            color: #444;
+            margin-top: 20px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        button:active {
+            background: #2e7d32;
+        }
+
+        #imagePreview {
+            display: none;
+            margin-top: 20px;
+            max-width: 100%;
+            border-radius: 5px;
+        }
+
+        .theme-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #388e3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        /* Темная тема с космическими цветами */
+        .dark-theme {
+            background-color: #121c2d; /* Темный космический фон */
+            color: #ffffff;
+        }
+
+        .dark-theme .container {
+            background-color: #1d2b41; /* Темно-синий контейнер */
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark-theme button {
+            background: #4a90e2; /* Ярко-синий для кнопок */
+            color: #fff;
+        }
+
+        .dark-theme input[type="file"],
+        .dark-theme select {
+            background: #1a2a3a; /* Темный фон для полей */
+            color: white;
+        }
+
+        .dark-theme textarea {
+            background: #2a3a55; /* Темно-серый фон для textarea */
+            color: #e1e1e1;
+        }
+
+        .dark-theme #imagePreview {
+            border: 1px solid #4a90e2; /* Ярко-синий акцент */
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            0% { opacity: 0; transform: translateX(-30px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>OCR Распознавание</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" id="imageInput" accept="image/*" required onchange="previewImage()">
+
+        <!-- Выбор языка -->
+        <select name="language" required>
+            <option value="rus">Русский</option>
+            <option value="eng">Английский</option>
+            <option value="spa">Испанский</option>
+            <option value="deu">Немецкий</option>
+            <option value="fra">Французский</option>
+        </select>
+
+        <!-- Выбор формата -->
+        <select name="format" required>
+            <option value="jpg">JPG</option>
+            <option value="png">PNG</option>
+            <option value="jpeg">JPEG</option>
+        </select>
+
+        <button type="submit">Загрузить</button>
+    </form>
+
+    <!-- Превью изображения -->
+    <img id="imagePreview" src="" alt="Превью изображения">
+
+    {% if image_url %}
+        <h2>Загруженное изображение</h2>
+        <img src="{{ image_url }}" alt="Распознанное изображение">
+    {% endif %}
+
+    {% if text %}
+        <h2>Распознанный текст</h2>
+        <textarea id="recognizedText" readonly>{{ text }}</textarea>
+        <button onclick="copyText()">Копировать текст</button>
+    {% endif %}
+</div>
+
+<script>
+    function previewImage() {
+        const file = document.getElementById('imageInput').files[0];
+        const reader = new FileReader();
+        const preview = document.getElementById('imagePreview');
+
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';  // Показываем изображение
+        }
+
+        if (file) {
+            reader.readAsDataURL(file); // Загружаем изображение для предварительного просмотра
+        }
+    }
+
+    function copyText() {
+        let textArea = document.getElementById("recognizedText");
+        textArea.select();
+        document.execCommand("copy");
+    }
+</script>
+
+</body>
+</html>
